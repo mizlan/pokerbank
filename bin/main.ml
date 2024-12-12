@@ -17,28 +17,31 @@ let db_transact =
   [%rapper
     execute
       {sql|
-      INSERT INTO transactions (session_id, player_id, bank_id, amount)
-      SELECT %int{session_id}, player_id, %int{bank_id}, %int{amount}
+      INSERT INTO transactions (session_id, player_id, bank_player_id, amount)
+      SELECT %int{session_id}, players.player_id, bank.player_id, %int{amount}
       FROM players
+      JOIN bank ON bank.session_id = %int{session_id}
       WHERE username = %string{username}
     |sql}]
 
-let db_get_bank_or_default =
+let db_register_player =
   [%rapper
-    get_one
+    execute
       {sql|
       INSERT INTO players (username)
-      VALUES (%string{default_user})
-      ON CONFLICT (username) DO NOTHING;
+      VALUES (%string{username})
+      ON CONFLICT (username) DO NOTHING
+    |sql}]
 
+let db_set_bank_if_unset =
+  [%rapper
+    execute
+      {sql|
       INSERT INTO bank (session_id, player_id)
       SELECT %int{session_id}, player_id
       FROM players
-      WHERE username = %string{default_user}
-      ON CONFLICT (session_id) DO NOTHING;
-
-      SELECT @int{player_id} FROM bank
-      WHERE session_id = %int{session_id}
+      WHERE username = %string{username}
+      ON CONFLICT (session_id) DO NOTHING
     |sql}]
 
 let db_set_bank =
@@ -53,12 +56,9 @@ let db_set_bank =
 
 let transact ~session_id ~username ~amount (module Db : DB) =
   let open Lwt_result.Syntax in
-  let* bank_id =
-    Lwt_result.map_error (fun _ -> "caqti database error querying bank")
-    @@ db_get_bank_or_default ~session_id ~default_user:username (module Db)
-  in
-  Lwt_result.map_error (fun _ -> "caqti database error transacting")
-  @@ db_transact ~session_id ~username ~bank_id ~amount (module Db)
+  let* () = db_register_player ~username (module Db) in
+  let* () = db_set_bank_if_unset ~session_id ~username (module Db) in
+  db_transact ~session_id ~username ~amount (module Db)
 
 let () =
   Dream.run ~interface:"0.0.0.0" ~port:6868
@@ -112,6 +112,6 @@ let () =
                    Dream.sql request (transact ~session_id ~username ~amount)
                  in
                  match res with
-                 | Error x -> Dream.html x
+                 | Error x -> Dream.html (Caqti_error.show x)
                  | Ok () -> Dream.html "success"));
        ]

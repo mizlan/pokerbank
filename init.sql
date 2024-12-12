@@ -33,11 +33,12 @@ CREATE TABLE players (
  * Each bank has a session_id and a player_id.
  */
 CREATE TABLE bank (
+	bank_record_id INTEGER PRIMARY KEY,
 	session_id INTEGER UNIQUE,
 	player_id INTEGER,
 
-	FOREIGN KEY (session_id) REFERENCES sessions(session_id),
-	FOREIGN KEY (player_id) REFERENCES players(player_id)
+	FOREIGN KEY (session_id) REFERENCES sessions (session_id),
+	FOREIGN KEY (player_id) REFERENCES players (player_id)
 ) STRICT;
 
 /*
@@ -47,13 +48,12 @@ CREATE TABLE transactions (
 	transaction_id INTEGER PRIMARY KEY,
 	session_id INTEGER,
 	player_id INTEGER,
-	bank_id INTEGER,
+	bank_player_id INTEGER,
 	amount INTEGER NOT NULL,
 	time TEXT DEFAULT CURRENT_TIMESTAMP,
 
-	FOREIGN KEY (session_id) REFERENCES sessions(session_id),
-	FOREIGN KEY (player_id) REFERENCES players(player_id),
-	FOREIGN KEY (bank_id) REFERENCES bank(player_id)
+	FOREIGN KEY (session_id) REFERENCES sessions (session_id),
+	FOREIGN KEY (player_id) REFERENCES players (player_id)
 ) STRICT;
 
 COMMIT;
