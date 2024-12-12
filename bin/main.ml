@@ -10,7 +10,7 @@ let db_create_session =
       {sql|
       INSERT INTO sessions (session_name)
       VALUES (%string{name})
-      RETURNING session_id
+      RETURNING @int{session_id}
     |sql}]
 
 let db_transact =
@@ -49,9 +49,11 @@ let db_set_bank =
     execute
       {sql|
       INSERT INTO bank (session_id, player_id)
-      VALUES (%int{session_id}, %int{player_id}) 
+      SELECT %int{session_id}, player_id
+      FROM players
+      WHERE username = %string{username}
       ON CONFLICT (session_id) 
-      DO UPDATE SET player_id=%int{player_id};
+      DO UPDATE SET player_id = excluded.player_id
     |sql}]
 
 let transact ~session_id ~username ~amount (module Db : DB) =
@@ -70,28 +72,31 @@ let () =
              let name_param = Dream.query request "name" in
              match name_param with
              | None -> Dream.html "need name"
-             | Some name ->
-                 let* _ = Dream.sql request (db_create_session ~name) in
-                 Dream.html ("created session " ^ name));
+             | Some name -> (
+                 let* res = Dream.sql request (db_create_session ~name) in
+                 match res with
+                 | Error e -> Dream.html (Caqti_error.show e)
+                 | Ok session_id ->
+                     Dream.html
+                       ("created session " ^ name ^ " with id "
+                      ^ string_of_int session_id)));
          Dream.post "/set_bank" (fun request ->
              let param =
                let open Option.Infix in
                let* session_id =
                  Dream.query request "session_id" >>= int_of_string_opt
                in
-               let* player_id =
-                 Dream.query request "player_id" >>= int_of_string_opt
-               in
-               Option.pure (session_id, player_id)
+               let* username = Dream.query request "username" in
+               Option.pure (session_id, username)
              in
              match param with
-             | None -> Dream.html "need session_id and player_id"
-             | Some (session_id, player_id) -> (
+             | None -> Dream.html "need session_id and username"
+             | Some (session_id, username) -> (
                  let* res =
-                   Dream.sql request (db_set_bank ~session_id ~player_id)
+                   Dream.sql request (db_set_bank ~session_id ~username)
                  in
                  match res with
-                 | Error _ -> Dream.html "db fail"
+                 | Error e -> Dream.html (Caqti_error.show e)
                  | Ok () -> Dream.html "success"));
          Dream.post "/transact" (fun request ->
              let param =
