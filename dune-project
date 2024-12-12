@@ -7,20 +7,20 @@
 (source
  (github username/reponame))
 
-(authors "Author Name")
+(authors "mizlan")
 
-(maintainers "Maintainer Name")
+(maintainers "mizlan")
 
-(license LICENSE)
+(license MIT)
 
 (documentation https://url/to/documentation)
 
 (package
  (name pokerbank)
- (synopsis "A short synopsis")
+ (synopsis "A ledger for poker games")
  (description "A longer description")
  (depends ocaml dune)
  (tags
-  (topics "to describe" your project)))
+  ()))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
