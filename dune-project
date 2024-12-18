@@ -1,6 +1,6 @@
 (lang dune 3.16)
 
-(name pokerbank)
+(name pokerbank_backend)
 
 (generate_opam_files true)
 
@@ -16,11 +16,9 @@
 (documentation https://url/to/documentation)
 
 (package
- (name pokerbank)
+ (name pokerbank_backend)
  (synopsis "A ledger for poker games")
  (description "A longer description")
  (depends ocaml dune)
  (tags
   ()))
-
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

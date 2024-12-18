@@ -25,7 +25,8 @@ CREATE TABLE sessions (
  */
 CREATE TABLE players (
 	player_id INTEGER PRIMARY KEY,
-	username TEXT UNIQUE NOT NULL,
+	display_name TEXT NOT NULL,
+	email TEXT NOT NULL UNIQUE,
 	winnings INTEGER NOT NULL DEFAULT 0
 ) STRICT;
 
@@ -34,8 +35,8 @@ CREATE TABLE players (
  */
 CREATE TABLE bank (
 	bank_record_id INTEGER PRIMARY KEY,
-	session_id INTEGER UNIQUE,
-	player_id INTEGER,
+	session_id INTEGER NOT NULL UNIQUE,
+	player_id INTEGER NOT NULL UNIQUE,
 
 	FOREIGN KEY (session_id) REFERENCES sessions (session_id),
 	FOREIGN KEY (player_id) REFERENCES players (player_id)
@@ -46,9 +47,9 @@ CREATE TABLE bank (
  */
 CREATE TABLE transactions (
 	transaction_id INTEGER PRIMARY KEY,
-	session_id INTEGER,
-	player_id INTEGER,
-	bank_player_id INTEGER,
+	session_id INTEGER NOT NULL,
+	player_id INTEGER NOT NULL,
+	bank_player_id INTEGER NOT NULL,
 	amount INTEGER NOT NULL,
 	time TEXT DEFAULT CURRENT_TIMESTAMP,
 

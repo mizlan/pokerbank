@@ -1,6 +1,6 @@
 (executable
- (public_name pokerbank)
+ (public_name pokerbank_backend)
  (name main)
  (libraries containers dream caqti-driver-sqlite3 ppx_rapper_lwt oidc cohttp-lwt-unix)
  (preprocess
-  (pps ppx_rapper)))
+  (pps ppx_rapper ppx_yojson_conv)))
