@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
+import { AnimatePresence, motion } from "motion/react";
 import Avatar from "boring-avatars";
 
 import {
@@ -48,11 +48,46 @@ const invoices = Array.from(Array(randNumber({ min: 3, max: 20 })).keys()).map(
 );
 
 export default function Home() {
+  const containerVariants = {
+    hidden: {
+      opacity: 0,
+    },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: {
+      opacity: 0,
+      y: 20,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4, //this controls the speed that the items in the list appear so if you want it to appear faster then decrease
+        ease: "easeInOut",
+      },
+    },
+  };
   return (
     <div className="max-w-[60ch] mx-auto my-10 p-5">
-      <ul className="[&_li:last-child]:border-0">
+      <motion.ul
+        className="[&_li:last-child]:border-0"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {invoices.map((player) => (
-          <li key={player.email} className="border-b py-2 px-1">
+          <motion.li
+            key={player.email}
+            className="border-b py-2 px-1"
+            variants={itemVariants}
+          >
             <div className="flex justify-between">
               <div className="flex items-center gap-3">
                 <Avatar
@@ -70,12 +105,21 @@ export default function Home() {
                 <div className="space-y-1">
                   <p className="font-medium text-sm leading-none">
                     {player.name}
+
                     {player.isBank && (
-                      <Crown
-                        size="12"
-                        color="#ca8a04"
-                        className="ml-[0.4rem] inline-block -translate-y-[0.08rem]"
-                      />
+                      <div className="relative group inline-block">
+                        <Crown
+                          size="12"
+                          color="#ca8a04"
+                          className="ml-[0.4rem] inline-block -translate-y-[0.08rem] cursor-pointer"
+                        />
+                        <div
+                          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded "
+                          style={{ whiteSpace: "nowrap" }}
+                        >
+                          Bank
+                        </div>
+                      </div>
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground leading-none">
@@ -100,67 +144,92 @@ export default function Home() {
                         <HandCoins />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent
-                      className="sm:max-w-[425px]"
-                      key={player.name}
-                    >
-                      <DialogHeader className="items-center">
-                        <Avatar
-                          name={player.email}
-                          colors={[
-                            "#fbb498",
-                            "#f8c681",
-                            "#bec47e",
-                            "#9bb78f",
-                            "#98908d",
-                          ]}
-                          variant="beam"
-                          size={62}
-                        />
-                        <DialogTitle>
-                          {player.name}
-                          {player.isBank && (
-                            <Crown
-                              size="16"
-                              color="#ca8a04"
-                              className="ml-[0.4rem] inline-block -translate-y-[0.08rem]"
-                            />
-                          )}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="py-4">
-                        <ul
-                          className="[&_li:last-child]:border-0 font-mono"
-                          style={{ fontFeatureSettings: '"ss09" 1' }}
+                    <AnimatePresence>
+                      <DialogContent
+                        className="sm:max-w-[425px]"
+                        key={player.name}
+                      >
+                        {/* two approaches: can remove the scales from initial and animate and only have opacity to have the fade in effect. 
+                        or you can have the scale if you want it to expand as you open. design choice. increasing duration makes the transition
+                        more dramatic and decreasing it makes the transition more subtle.
+                        */}
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }} // this scale controls how drastic you want the expand transition to be (decreasing-> more dramatic)
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
                         >
-                          {player.transactions.map((transaction) => (
-                            <li
-                              className="flex justify-between items-center gap-4 border-b py-2 px-1"
-                              key={transaction.timestamp}
+                          <DialogHeader className="items-center">
+                            <Avatar
+                              name={player.email}
+                              colors={[
+                                "#fbb498",
+                                "#f8c681",
+                                "#bec47e",
+                                "#9bb78f",
+                                "#98908d",
+                              ]}
+                              variant="beam"
+                              size={62}
+                            />
+                            <DialogTitle>
+                              {player.name}
+                              {player.isBank && (
+                                <div className="relative group inline-block">
+                                  <Crown
+                                    size="16"
+                                    color="#ca8a04"
+                                    className="ml-[0.4rem] inline-block -translate-y-[0.08rem] cursor-pointer"
+                                  />
+                                  <div
+                                    //not centered
+                                    className="absolute bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
+                                    style={{ whiteSpace: "nowrap" }}
+                                  >
+                                    Bank
+                                  </div>
+                                </div>
+                              )}
+                            </DialogTitle>
+                          </DialogHeader>
+                          <div className="py-4">
+                            <ul
+                              className="[&_li:last-child]:border-0 font-mono"
+                              style={{ fontFeatureSettings: '"ss09" 1' }}
                             >
-                              <div className="text-sans text-sm text-muted-foreground">
-                                {new Date(
-                                  transaction.timestamp,
-                                ).toLocaleTimeString()}
-                              </div>
-                              <div className="text-sm text-zinc-700">
-                                {transaction.amount.toLocaleString("en-US", {
-                                  style: "currency",
-                                  currency: "USD",
-                                })}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </DialogContent>
+                              {player.transactions.map((transaction) => (
+                                <li
+                                  className="flex justify-between items-center gap-4 border-b py-2 px-1"
+                                  key={transaction.timestamp}
+                                >
+                                  <div className="text-sans text-sm text-muted-foreground">
+                                    {new Date(
+                                      transaction.timestamp,
+                                    ).toLocaleTimeString()}
+                                  </div>
+                                  <div className="text-sm text-zinc-700">
+                                    {transaction.amount.toLocaleString(
+                                      "en-US",
+                                      {
+                                        style: "currency",
+                                        currency: "USD",
+                                      },
+                                    )}
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </motion.div>
+                      </DialogContent>
+                    </AnimatePresence>
                   </Dialog>
                 </div>
               </div>
             </div>
-          </li>
+          </motion.li>
         ))}
-      </ul>
+      </motion.ul>
     </div>
   );
 }
