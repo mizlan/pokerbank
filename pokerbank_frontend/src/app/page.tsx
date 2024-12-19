@@ -103,7 +103,7 @@ export default function Home() {
                   size={32}
                 />
                 <div className="space-y-1">
-                  <p className="font-medium text-sm leading-none">
+                  <div className="font-medium text-sm leading-none">
                     {player.name}
 
                     {player.isBank && (
@@ -121,10 +121,10 @@ export default function Home() {
                         </div>
                       </div>
                     )}
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-none">
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-none">
                     {player.email}
-                  </p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -202,8 +202,6 @@ export default function Home() {
                                   className="flex justify-between items-center gap-4 border-b py-2 px-1"
                                   key={transaction.timestamp}
                                 >
-
-
                                   {/* option 1 : displays the date and on hover displays the time that was edited */}
                                   <div className="relative group text-sans text-sm text-muted-foreground">
                                     {new Date(
@@ -270,6 +268,29 @@ export default function Home() {
                                       },
                                     )}
                                   </div>
+
+                                  {/* option: have the transactions negative or positive and if it's negative display in red 
+                                  if it's positive display in green. 
+                                  pros: clarity
+                                  cons: more colors on the screen whereas the gray was clean
+                                  
+                                  note: make sure to change the min for transaction amount to a negative number to test 
+                                  */}
+                                  {/* <div
+                                    className={`text-sm font-mono ${
+                                      transaction.amount < 0
+                                        ? "text-red-500"
+                                        : "text-green-500"
+                                    }`}
+                                  >
+                                    {transaction.amount.toLocaleString(
+                                      "en-US",
+                                      {
+                                        style: "currency",
+                                        currency: "USD",
+                                      },
+                                    )}
+                                  </div> */}
                                 </li>
                               ))}
                             </ul>
