@@ -114,7 +114,7 @@ export default function Home() {
 
                     {player.isBank && (
                       <TooltipProvider>
-                        <Tooltip>
+                        <Tooltip delayDuration={30}>
                           <TooltipTrigger asChild>
                             <Crown
                               size="12"
@@ -183,7 +183,7 @@ export default function Home() {
                               {player.name}
                               {player.isBank && (
                                 <TooltipProvider>
-                                  <Tooltip>
+                                  <Tooltip delayDuration={30}>
                                     <TooltipTrigger asChild>
                                       <Crown
                                         size="16"
@@ -212,26 +212,36 @@ export default function Home() {
                                   {/* option 2: original option: displays HH:MM and on hover HH:MM:SS */}
 
                                   <div className="relative group text-sans text-sm text-muted-foreground">
-                                    {new Date(
-                                      transaction.timestamp,
-                                    ).toLocaleTimeString([], {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                    <div
-                                      className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
-                                      style={{ whiteSpace: "nowrap" }}
-                                    >
-                                      {new Date(transaction.timestamp)
-                                        .toLocaleTimeString([], {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          second: "2-digit",
-                                        })
-                                        .replace(" AM", "")
-                                        .replace(" PM", "")}
-                                    </div>
-
+                                    <TooltipProvider>
+                                      <Tooltip delayDuration={30}>
+                                        <TooltipTrigger asChild>
+                                          <span className="text-sans text-sm text-muted-foreground">
+                                            {new Date(
+                                              transaction.timestamp,
+                                            ).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                          side="top"
+                                          align="center"
+                                        >
+                                          {
+                                            new Date(
+                                              transaction.timestamp,
+                                            ).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                              second: "2-digit",
+                                            })
+                                            // .replace(" AM", "")
+                                            // .replace(" PM", "")
+                                          }
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                     {/* option 2.25: original option: displays HH:MM WITHOUT AM/PM and on hover HH:MM:SS */}
                                     {/* <div className="relative group text-sans text-sm text-muted-foreground">
                                     {new Date(
