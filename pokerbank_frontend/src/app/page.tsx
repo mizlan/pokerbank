@@ -203,7 +203,9 @@ export default function Home() {
                                   key={transaction.timestamp}
                                 >
                                   {/* option 1 : displays the date and on hover displays the time that was edited */}
-                                  <div className="relative group text-sans text-sm text-muted-foreground">
+
+
+                                  {/* <div className="relative group text-sans text-sm text-muted-foreground">
                                     {new Date(
                                       transaction.timestamp,
                                     ).toLocaleDateString([], {
@@ -222,10 +224,11 @@ export default function Home() {
                                         minute: "2-digit",
                                         second: "2-digit",
                                       })}
-                                    </div>
+                                    </div> */}
 
                                     {/* option 2: original option: displays HH:MM and on hover HH:MM:SS */}
-                                    {/* <div className="relative group text-sans text-sm text-muted-foreground">
+
+                                    <div className="relative group text-sans text-sm text-muted-foreground">
                                     {new Date(
                                       transaction.timestamp,
                                     ).toLocaleTimeString([], {
@@ -244,7 +247,7 @@ export default function Home() {
                                         minute: "2-digit",
                                         second: "2-digit",
                                       })}
-                                    </div> */}
+                                    </div>
 
                                     {/* option 3: this one displays the date along with the exact time  */}
 
