@@ -2,6 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Crown, HandCoins } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import {
   Dialog,
@@ -107,19 +113,20 @@ export default function Home() {
                     {player.name}
 
                     {player.isBank && (
-                      <div className="relative group inline-block">
-                        <Crown
-                          size="12"
-                          color="#ca8a04"
-                          className="ml-[0.4rem] inline-block -translate-y-[0.08rem] cursor-pointer"
-                        />
-                        <div
-                          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded "
-                          style={{ whiteSpace: "nowrap" }}
-                        >
-                          Bank
-                        </div>
-                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Crown
+                              size="12"
+                              color="#ca8a04"
+                              className="ml-[0.4rem] inline-block -translate-y-[0.08rem] cursor-pointer"
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" align="center">
+                            Bank
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground leading-none">
@@ -175,20 +182,20 @@ export default function Home() {
                             <DialogTitle>
                               {player.name}
                               {player.isBank && (
-                                <div className="relative group inline-block">
-                                  <Crown
-                                    size="16"
-                                    color="#ca8a04"
-                                    className="ml-[0.4rem] inline-block -translate-y-[0.08rem] cursor-pointer"
-                                  />
-                                  <div
-                                    //not centered
-                                    className="absolute bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
-                                    style={{ whiteSpace: "nowrap" }}
-                                  >
-                                    Bank
-                                  </div>
-                                </div>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Crown
+                                        size="16"
+                                        color="#ca8a04"
+                                        className="ml-[0.4rem] inline-block -translate-y-[0.08rem] cursor-pointer"
+                                      />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" align="center">
+                                      Bank
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </DialogTitle>
                           </DialogHeader>
@@ -202,8 +209,6 @@ export default function Home() {
                                   className="flex justify-between items-center gap-4 border-b py-2 px-1"
                                   key={transaction.timestamp}
                                 >
-                               
-
                                   {/* option 2: original option: displays HH:MM and on hover HH:MM:SS */}
 
                                   <div className="relative group text-sans text-sm text-muted-foreground">
@@ -269,8 +274,6 @@ export default function Home() {
                                         second: "2-digit",
                                       })}
                                     </div> */}
-
-                  
                                   </div>
 
                                   <div className="text-sm text-zinc-700">
