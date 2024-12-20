@@ -202,28 +202,7 @@ export default function Home() {
                                   className="flex justify-between items-center gap-4 border-b py-2 px-1"
                                   key={transaction.timestamp}
                                 >
-                                  {/* option 1 : displays the date and on hover displays the time that was edited */}
-
-                                  {/* <div className="relative group text-sans text-sm text-muted-foreground">
-                                    {new Date(
-                                      transaction.timestamp,
-                                    ).toLocaleDateString([], {
-                                      year: "2-digit",
-                                      month: "2-digit",
-                                      day: "2-digit",
-                                    })}
-                                    <div
-                                      className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
-                                      style={{ whiteSpace: "nowrap" }}
-                                    >
-                                      {new Date(
-                                        transaction.timestamp,
-                                      ).toLocaleTimeString([], {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        second: "2-digit",
-                                      })}
-                                    </div> */}
+                               
 
                                   {/* option 2: original option: displays HH:MM and on hover HH:MM:SS */}
 
@@ -238,16 +217,37 @@ export default function Home() {
                                       className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
                                       style={{ whiteSpace: "nowrap" }}
                                     >
-                                      {new Date(
-                                        transaction.timestamp,
-                                      ).toLocaleTimeString([], {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        second: "2-digit",
-                                      })}
+                                      {new Date(transaction.timestamp)
+                                        .toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          second: "2-digit",
+                                        })
+                                        .replace(" AM", "")
+                                        .replace(" PM", "")}
                                     </div>
 
-                                  {/* option 2.5: original option: displays HH:MM WITHOUT AM/PM and on hover HH:MM:SS */}
+                                    {/* option 2.25: original option: displays HH:MM WITHOUT AM/PM and on hover HH:MM:SS */}
+                                    {/* <div className="relative group text-sans text-sm text-muted-foreground">
+                                    {new Date(
+                                      transaction.timestamp,
+                                    ).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                    <div
+                                      className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
+                                      style={{ whiteSpace: "nowrap" }}
+                                    >
+                                      {new Date(transaction.timestamp)
+                                        .toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          second: "2-digit",
+                                        })}
+                                    </div> */}
+
+                                    {/* option 2.5: original option: displays HH:MM WITHOUT AM/PM and on hover HH:MM:SS */}
 
                                     {/* <div className="relative group text-sans text-sm text-muted-foreground">
                                     {new Date(transaction.timestamp)
@@ -270,18 +270,7 @@ export default function Home() {
                                       })}
                                     </div> */}
 
-
-                                    {/* option 3: this one displays the date along with the exact time  */}
-
-                                    {/* 
-                                    <div
-                                      className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
-                                      style={{ whiteSpace: "nowrap" }}
-                                    >
-                                      {new Date(
-                                        transaction.timestamp,
-                                      ).toLocaleString()}
-                                    </div> */}
+                  
                                   </div>
 
                                   <div className="text-sm text-zinc-700">
