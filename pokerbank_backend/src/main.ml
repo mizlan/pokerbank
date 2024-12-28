@@ -20,25 +20,107 @@ let dream_query_int req key =
   | None -> Lwt.return_error ("missing int query parameter " ^ key)
   | Some x -> Lwt.return_ok x
 
+module F = struct
+  let player_id = Dream.new_field ~name:"player_id" ()
+  let session_id = Dream.new_field ~name:"session_id" ()
+
+  let get_player_id req =
+    Option.get_exn_or "get_player_id must be called from within a player route"
+      (Dream.field req player_id)
+end
+
+module E = struct
+  let mk_error status msg =
+    Dream.json ~status (Printf.sprintf {|{"error": "%s"}|} msg)
+
+  let internal = mk_error `Internal_Server_Error
+  let unauthorized = mk_error `Unauthorized
+end
+
+let auth_player_middleware next_handler req =
+  match Dream.session_field req "player_id" with
+  | None -> E.unauthorized "not signed in"
+  | Some player_id -> (
+      let player_id = Int.of_string player_id in
+      match player_id with
+      | None -> E.unauthorized "malformed player_id"
+      | Some player_id ->
+          Dream.set_field req F.player_id player_id;
+          next_handler req)
+
+let auth_bank_middleware next_handler req =
+  match Dream.field req F.player_id with
+  | None -> E.unauthorized "no player_id"
+  | Some player_id -> (
+      let* session_id = Dream.sql req (Db.get_session_of_player ~player_id) in
+      match session_id with
+      | Error msg -> E.internal msg
+      | Ok session_id -> (
+          match session_id with
+          | None -> E.unauthorized "not a bank player"
+          | Some session_id ->
+              Dream.set_field req F.session_id session_id;
+              next_handler req))
+
+let bank_routes =
+  [
+    Dream.post "/api/set_bank" (fun req ->
+        let* v =
+          let open Lwt_result.Syntax in
+          let* session_id = dream_query_int req "session_id" in
+          let* player_id = dream_query_int req "player_id" in
+          let+ () = Dream.sql req (Db.set_bank ~session_id ~player_id) in
+          "success"
+        in
+        dream_render v);
+    Dream.post "/api/transact" (fun req ->
+        let* v =
+          let open Lwt_result.Syntax in
+          let* session_id = dream_query_int req "session_id" in
+          let* player_id = dream_query_int req "player_id" in
+          let* amount = dream_query_int req "amount" in
+          let+ () =
+            Dream.sql req (Db.transact ~session_id ~player_id ~amount)
+          in
+          "success"
+        in
+        dream_render v);
+  ]
+
+let player_routes =
+  [
+    Dream.scope "/" [ auth_bank_middleware ] bank_routes;
+    Dream.get "/api/ping" (fun _ -> Dream.json {|{"message": "pong"}|});
+    Dream.get "/api/session_info" (fun req ->
+        let player_id = F.get_player_id req in
+        let* v =
+          let open Lwt_result.Syntax in
+          let+ session_id =
+            Dream.sql req (Db.get_session_of_player ~player_id)
+          in
+          match session_id with
+          | None -> "null"
+          | Some session_id -> Int.to_string session_id
+        in
+        dream_render v);
+    Dream.post "/api/create_session" (fun req ->
+        let player_id = F.get_player_id req in
+        let* v =
+          let open Lwt_result.Syntax in
+          let* name = dream_query_string req "name" in
+          let+ i = Dream.sql req (Db.create_session ~name ~player_id) in
+          Int.to_string i
+        in
+        dream_render v);
+  ]
+
 let routes =
   [
     (* Currently, all routes are prefixed with /api, and there is
        nothing else but /api. This is for future proofing and in case
        I ever decided to have both the frontend and backend on the exact same
        domain *)
-    Dream.get "/api/notifs" (fun req ->
-        let email = Dream.session_field req "email" in
-        match email with
-        (* TODO *)
-        | None -> Dream.html "<a href='/login'>Login</a>"
-        | Some email ->
-            let name = Dream.session_field req "name" in
-            Dream.json
-              (Printf.sprintf {|{"email": "%s", "name": "%s"}|} email
-                 (Option.get_or ~default:"no name" name)));
-    Dream.get "/api/logout" (fun req ->
-        let* () = Dream.invalidate_session req in
-        Dream.redirect req "/");
+    Dream.scope "/" [ auth_player_middleware ] player_routes;
     Dream.get "/api/login" (fun req ->
         let state = Auth.generate_state () in
         let* resp =
@@ -59,13 +141,15 @@ let routes =
           | _ ->
               let* tok = Auth.get_token code in
               let* { email; name } = Auth.get_userinfo tok in
-              let+ () = Dream.sql req (Db.register_player ~email ~name) in
+              let+ player_id =
+                Dream.sql req (Db.register_player ~email ~name)
+              in
               let open Lwt.Syntax in
               let* () = Dream.invalidate_session req in
-              let random_str = Auth.generate_state () in
-              let* () = Dream.set_session_field req "ssid" random_str in
-              let* () = Dream.set_session_field req "email" email in
-              let* () = Dream.set_session_field req "name" name in
+              let* () =
+                Dream.set_session_field req "player_id"
+                  (Int.to_string player_id)
+              in
               Lwt.return ()
         in
         let* resp =
@@ -77,33 +161,9 @@ let routes =
         in
         Dream.drop_cookie resp req "google_oauth_state";
         Lwt.return resp);
-    Dream.post "/api/create_session" (fun req ->
-        let* v =
-          let open Lwt_result.Syntax in
-          let* name = dream_query_string req "name" in
-          let+ i = Dream.sql req (Db.create_session ~name) in
-          Int.to_string i
-        in
-        dream_render v);
-    Dream.post "/api/set_bank" (fun req ->
-        let* v =
-          let open Lwt_result.Syntax in
-          let* session_id = dream_query_int req "session_id" in
-          let* email = dream_query_string req "email" in
-          let+ () = Dream.sql req (Db.set_bank ~session_id ~email) in
-          "success"
-        in
-        dream_render v);
-    Dream.post "/api/transact" (fun req ->
-        let* v =
-          let open Lwt_result.Syntax in
-          let* session_id = dream_query_int req "session_id" in
-          let* email = dream_query_string req "email" in
-          let* amount = dream_query_int req "amount" in
-          let+ () = Dream.sql req (Db.transact ~session_id ~email ~amount) in
-          "success"
-        in
-        dream_render v);
+    Dream.get "/api/logout" (fun req ->
+        let* () = Dream.invalidate_session req in
+        Dream.json {|{"message": "logged out"}|});
   ]
 
 let () =
