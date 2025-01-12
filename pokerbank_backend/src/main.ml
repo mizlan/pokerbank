@@ -91,11 +91,6 @@ let routes =
         in
         Dream.set_cookie resp req "google_oauth_state" state;
         Lwt.return resp);
-    Dream.get "/test/autoauth" (fun req ->
-        let* player_id = dream_query_string req "id" in
-        let player_id = Result.get_or player_id ~default:"1" in
-        let* () = Dream.set_session_field req "player_id" player_id in
-        Dream.json {|{"message": "autoauthenticated"}|});
     Dream.get "/api/auth/callback" (fun req ->
         let* v =
           let open Lwt_result.Syntax in
@@ -134,7 +129,33 @@ let routes =
         Dream.json {|{"message": "logged out"}|});
   ]
 
+let arg_private_admin = ref false
+
+let private_admin_routes =
+  [
+    Dream.get "/test/autoauth" (fun req ->
+        let* player_id = dream_query_string req "id" in
+        let player_id = Result.get_or player_id ~default:"1" in
+        let* () = Dream.set_session_field req "player_id" player_id in
+        Dream.json {|{"message": "autoauthenticated"}|});
+  ]
+
 let () =
+  let usage_msg = "pokerbank_backend [-private_admin]" in
+  let speclist =
+    [
+      ( "-private_admin",
+        Arg.Set arg_private_admin,
+        "Enable private administrative routes" );
+    ]
+  in
+  let anon_fun = fun _ -> failwith "No positional arguments expected" in
+  Arg.parse speclist anon_fun usage_msg
+
+let () =
+  let routes =
+    routes @ if !arg_private_admin then private_admin_routes else []
+  in
   Dream.run ~interface:"0.0.0.0" ~port:6868
   @@ Dream.livereload @@ Dream.logger
   @@ Dream.sql_pool "sqlite3:db.db"
