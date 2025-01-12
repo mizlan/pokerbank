@@ -1,7 +1,8 @@
 open Containers
 module C = Oidc.SimpleClient
 module Db = Database
-open Middleware
+module M = Middleware
+module E = Error
 open Lwt.Syntax
 
 let dream_render v =
@@ -55,22 +56,22 @@ let bank_routes =
 
 let player_routes =
   [
-    Dream.scope "/" [ auth_bank_middleware ] bank_routes;
+    Dream.scope "/" [ M.auth_bank_middleware ] bank_routes;
     Dream.get "/api/ping" (fun _ -> Dream.json {|{"message": "pong"}|});
     Dream.get "/api/session_info" (fun req ->
-        let player_id = F.get_player_id req in
-        let* txs = Dream.sql req (Db.get_transactions ~player_id) in
-        match txs with
-        | Error e -> Dream.json e
-        | Ok txs ->
-            Dream.json
-              (* TODO is there a nicer way of doing this? *)
-              (Yojson.Safe.to_string
-                 (`List (txs |> List.map Db.yojson_of_player_transactions))));
+        dream_render
+        @@
+        let player_id = M.F.get_player_id req in
+        let open Lwt_result.Syntax in
+        let+ txs = dream_sql_or_err req (Db.get_transactions ~player_id) in
+        Dream.json
+          (* TODO is there a nicer way of doing this? *)
+          (Yojson.Safe.to_string
+             (`List (txs |> List.map Db.yojson_of_player_transactions))));
     Dream.post "/api/create_session" (fun req ->
         dream_render
         @@
-        let player_id = F.get_player_id req in
+        let player_id = M.F.get_player_id req in
         let open Lwt_result.Syntax in
         let* name = dream_query_string req "name" in
         let+ i = dream_sql_or_err req (Db.create_session ~name ~player_id) in
@@ -83,7 +84,7 @@ let routes =
        nothing else but /api. This is for future proofing and in case
        I ever decided to have both the frontend and backend on the exact same
        domain *)
-    Dream.scope "/" [ auth_player_middleware ] player_routes;
+    Dream.scope "/" [ M.auth_player_middleware ] player_routes;
     Dream.get "/api/login" (fun req ->
         let state = Auth.generate_state () in
         let* resp =
@@ -119,7 +120,7 @@ let routes =
         in
         let* resp =
           match v with
-          | Ok _ -> Dream.redirect req "http://localhost:3000"
+          | Ok _ -> Dream.redirect req "http://localhost:5173"
           | Error e -> e
         in
         Dream.drop_cookie resp req "google_oauth_state";
@@ -159,4 +160,4 @@ let () =
   Dream.run ~interface:"0.0.0.0" ~port:6868
   @@ Dream.livereload @@ Dream.logger
   @@ Dream.sql_pool "sqlite3:db.db"
-  @@ Dream.memory_sessions @@ Dream.router routes
+  @@ Dream.memory_sessions @@ M.cors_middleware @@ Dream.router routes

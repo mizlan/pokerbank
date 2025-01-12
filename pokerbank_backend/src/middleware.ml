@@ -1,16 +1,8 @@
 open Containers
 module Db = Database
+module E = Error
 
 let ( let* ) = Lwt.bind
-
-module E = struct
-  let mk_error status msg =
-    Dream.json ~status (Printf.sprintf {|{"error": "%s"}|} msg)
-
-  let internal = mk_error `Internal_Server_Error
-  let unauthorized = mk_error `Unauthorized
-  let bad_req = mk_error `Bad_Request
-end
 
 module F = struct
   let player_id = Dream.new_field ~name:"player_id" ()
@@ -20,6 +12,14 @@ module F = struct
     Option.get_exn_or "get_player_id must be called from within a player route"
       (Dream.field req player_id)
 end
+
+let cors_middleware next_handler req =
+  let* resp = next_handler req in
+  (* XXX change to correct URL *)
+  Dream.set_header resp "Access-Control-Allow-Origin" "http://localhost:5173";
+  (* is this dubious? *)
+  Dream.set_header resp "Access-Control-Allow-Credentials" "true";
+  Lwt.return resp
 
 let auth_player_middleware next_handler req =
   match Dream.session_field req "player_id" with
