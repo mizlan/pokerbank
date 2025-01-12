@@ -1,4 +1,23 @@
+open Containers
+
 module type DB = Caqti_lwt.CONNECTION
+
+open Ppx_yojson_conv_lib.Yojson_conv.Primitives
+
+type transaction = {
+  transaction_id : int;
+  bank_display_name : string;
+  amount : int;
+}
+[@@deriving yojson]
+
+type player_transactions = {
+  player_id : int;
+  display_name : string;
+  email : string;
+  transactions : transaction list;
+}
+[@@deriving yojson]
 
 module Q = struct
   let create_session =
@@ -17,6 +36,24 @@ module Q = struct
           SELECT @int{session_id}
           FROM participants
           WHERE player_id = %int{player_id}
+        |sql}]
+
+  let get_transactions =
+    [%rapper
+      get_many
+        {sql|
+          SELECT
+            @int{transaction_id},
+            @int{p.player_id},
+            @string{p.display_name},
+            @string{p.email},
+            @string{b.display_name},
+            @int{amount}
+          FROM transactions
+          JOIN players p ON transactions.player_id = p.player_id
+          JOIN players b ON transactions.bank_player_id = b.player_id
+          WHERE session_id = %int{session_id}
+          ORDER BY transactions.player_id
         |sql}]
 
   let get_players_in_session =
@@ -93,3 +130,28 @@ let get_session_of_player ~player_id (module Db : DB) =
 
 let get_players_in_session ~session_id (module Db : DB) =
   Q.get_players_in_session ~session_id (module Db) |> or_err
+
+let group_succ_on id_proj l =
+  List.group_succ ~eq:(fun a b -> id_proj a = id_proj b) l
+
+let get_transactions ~player_id (module Db : DB) =
+  (* Potential race condition between two database calls; *)
+  (* TODO join *)
+  let open Lwt_result.Syntax in
+  let* session_id = get_session_of_player ~player_id (module Db) in
+  match session_id with
+  | None -> Lwt.return_error "not in a session"
+  | Some session_id ->
+      let+ tuples = Q.get_transactions ~session_id (module Db) |> or_err in
+      let groups =
+        group_succ_on (fun (_, player_id, _, _, _, _) -> player_id) tuples
+      in
+      let transaction_of_tuple (t, _, _, _, b, a) =
+        { transaction_id = t; bank_display_name = b; amount = a }
+      in
+      let process_group g =
+        let _, player_id, display_name, email, _, _ = List.hd g in
+        let transactions = List.map transaction_of_tuple g in
+        { player_id; display_name; email; transactions }
+      in
+      List.map process_group groups

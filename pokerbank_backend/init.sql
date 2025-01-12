@@ -4,12 +4,12 @@
 
 PRAGMA foreign_keys = ON;
 
+BEGIN TRANSACTION;
+
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS players;
 DROP TABLE IF EXISTS bank;
 DROP TABLE IF EXISTS transactions;
-
-BEGIN TRANSACTION;
 
 /*
  * Each player has a unique player_id, a unique username, and a winnings amount.
@@ -38,7 +38,7 @@ CREATE TABLE sessions (
  * Each bank has a session_id and a player_id.
  */
 CREATE TABLE participants (
-	state_id INTEGER PRIMARY KEY,
+	participant_id INTEGER PRIMARY KEY,
 	player_id INTEGER NOT NULL UNIQUE,
 	session_id INTEGER NOT NULL,
 
