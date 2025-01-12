@@ -26,6 +26,7 @@ import {
   randFullName,
   randNumber,
 } from "@ngneat/falso";
+import { useEffect, useState } from "react";
 
 const generateRandomPlayerInfo = () => {
   const numTransactions = randNumber({ min: 1, max: 10 });
@@ -47,6 +48,17 @@ const generateRandomPlayerInfo = () => {
   };
 };
 
+type PlayerInfo = {
+  email: string;
+  name: string;
+  totalAmount: number;
+  isBank: boolean;
+  transactions: {
+    amount: number;
+    timestamp: string;
+  }[];
+};
+
 const invoices = Array.from(Array(randNumber({ min: 3, max: 20 })).keys()).map(
   () => {
     return generateRandomPlayerInfo();
@@ -54,6 +66,12 @@ const invoices = Array.from(Array(randNumber({ min: 3, max: 20 })).keys()).map(
 );
 
 export default function Home() {
+  const [playerInfos, setPlayerInfos] = useState([] as PlayerInfo[]);
+
+  useEffect(() => {
+    setPlayerInfos(invoices);
+  });
+
   const containerVariants = {
     hidden: {
       opacity: 0,
@@ -80,15 +98,16 @@ export default function Home() {
       },
     },
   };
+
   return (
-    <div className="max-w-[60ch] mx-auto my-10 p-5">
+    <div className="my-10 p-5">
       <motion.ul
         className="[&_li:last-child]:border-0"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {invoices.map((player) => (
+        {playerInfos.map((player) => (
           <motion.li
             key={player.email}
             className="border-b py-2 px-1"
