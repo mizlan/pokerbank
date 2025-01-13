@@ -4,3 +4,4 @@
   let internal = mk_error `Internal_Server_Error
   let unauthorized = mk_error `Unauthorized
   let bad_req = mk_error `Bad_Request
+  let forbidden = mk_error `Forbidden

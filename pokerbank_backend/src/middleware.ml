@@ -41,7 +41,7 @@ let auth_bank_middleware next_handler req =
       | Error msg -> E.internal msg
       | Ok session_id -> (
           match session_id with
-          | None -> E.unauthorized "not a bank player"
+          | None -> E.forbidden "not a bank player"
           | Some session_id ->
               Dream.set_field req F.session_id session_id;
               next_handler req))
