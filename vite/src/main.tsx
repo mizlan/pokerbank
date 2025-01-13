@@ -12,9 +12,7 @@ createRoot(document.getElementById("root")!).render(
       value={{
         refreshInterval: 15000,
         fetcher: async (resource) => {
-          const API_URL = "http://localhost:6868";
-          const url = new URL(resource, API_URL);
-          const resp = await fetch(url, { credentials: "include" });
+          const resp = await fetch(resource);
           const json = await resp.json();
           if (!resp.ok) {
             const error = new Error("An error occurred");

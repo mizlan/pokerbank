@@ -17,7 +17,8 @@ export default function Login() {
   return (
     <div className="w-full p-5 flex flex-col min-h-screen justify-between">
       <Button className="h-12" asChild>
-        <Link to="http://localhost:6868/api/login">Sign in with Google</Link>
+        {/* Don't use a Link, this is proxied in dev */}
+        <a href="/api/login">Sign in with Google</a>
       </Button>
     </div>
   );
