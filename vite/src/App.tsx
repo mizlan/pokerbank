@@ -1,10 +1,25 @@
 // import { useAuthStore } from "@/store";
-// import { useEffect } from "react";
-// import { useNavigate } from "react-router";
+import Avatar from "boring-avatars";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router";
+import { Crown, HandCoins } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import useSWR from "swr";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 function App() {
-  // let navigate = useNavigate();
+  let navigate = useNavigate();
 
   const { data, error, isLoading } = useSWR("/api/session_info");
 
@@ -13,14 +28,211 @@ function App() {
   }
 
   if (error) {
-    console.log("epic fail");
+    if (error.status == 401) {
+      navigate("/login");
+    }
     return <p>{JSON.stringify(error)}</p>;
   }
 
   return (
-    <div>
-      <p>data</p>
-      <p>{JSON.stringify(data)}</p>
+    <div className="my-10 p-5 space-y-1">
+      {data.map((player) => (
+        <div className="flex justify-between">
+          <div className="flex items-center gap-3">
+            <Avatar
+              name={player.email}
+              colors={["#fbb498", "#f8c681", "#bec47e", "#9bb78f", "#98908d"]}
+              variant="beam"
+              size={32}
+            />
+            <div className="space-y-1">
+              <div className="font-medium text-sm leading-none">
+                {player.display_name}
+              </div>
+              <div className="text-xs text-muted-foreground leading-none">
+                {player.email}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div
+              className="text-right font-mono text-zinc-700"
+              style={{ fontFeatureSettings: '"ss09" 1' }}
+            >
+              {/* TODO sum all transactions */}
+              {player.transactions[0].amount.toLocaleString("en-US", {
+                style: "currency",
+                currency: "USD",
+              })}
+            </div>
+            <div className="text-right space-x-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="icon">
+                    <HandCoins />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]" key={player.email}>
+                  {/* two approaches: can remove the scales from initial and animate and only have opacity to have the fade in effect. 
+                        or you can have the scale if you want it to expand as you open. design choice. increasing duration makes the transition
+                        more dramatic and decreasing it makes the transition more subtle.
+                        */}
+                  <DialogHeader className="items-center">
+                    <Avatar
+                      name={player.email}
+                      colors={[
+                        "#fbb498",
+                        "#f8c681",
+                        "#bec47e",
+                        "#9bb78f",
+                        "#98908d",
+                      ]}
+                      variant="beam"
+                      size={62}
+                    />
+                    <DialogTitle>
+                      {player.display_name}
+                      {player.isBank && (
+                        <TooltipProvider>
+                          <Tooltip delayDuration={30}>
+                            <TooltipTrigger asChild>
+                              <Crown
+                                size="16"
+                                color="#ca8a04"
+                                className="ml-[0.4rem] inline-block -translate-y-[0.08rem] cursor-pointer"
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" align="center">
+                              Bank
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <ul
+                      className="[&_li:last-child]:border-0 font-mono"
+                      style={{ fontFeatureSettings: '"ss09" 1' }}
+                    >
+                      {player.transactions.map((transaction) => (
+                        <li
+                          className="flex justify-between items-center gap-4 border-b py-2 px-1"
+                          key={transaction.timestamp}
+                        >
+                          {/* option 2: original option: displays HH:MM and on hover HH:MM:SS */}
+
+                          <div className="relative group text-sans text-sm text-muted-foreground">
+                            <TooltipProvider>
+                              <Tooltip delayDuration={30}>
+                                <TooltipTrigger asChild>
+                                  <span className="text-sans text-sm text-muted-foreground">
+                                    {new Date(
+                                      transaction.timestamp,
+                                    ).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" align="center">
+                                  {
+                                    new Date(
+                                      transaction.timestamp,
+                                    ).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      second: "2-digit",
+                                    })
+                                    // .replace(" AM", "")
+                                    // .replace(" PM", "")
+                                  }
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {/* option 2.25: original option: displays HH:MM WITHOUT AM/PM and on hover HH:MM:SS */}
+                            {/* <div className="relative group text-sans text-sm text-muted-foreground">
+                                    {new Date(
+                                      transaction.timestamp,
+                                    ).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                    <div
+                                      className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
+                                      style={{ whiteSpace: "nowrap" }}
+                                    >
+                                      {new Date(transaction.timestamp)
+                                        .toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          second: "2-digit",
+                                        })}
+                                    </div> */}
+
+                            {/* option 2.5: original option: displays HH:MM WITHOUT AM/PM and on hover HH:MM:SS */}
+
+                            {/* <div className="relative group text-sans text-sm text-muted-foreground">
+                                    {new Date(transaction.timestamp)
+                                      .toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
+                                      .replace(" AM", "")
+                                      .replace(" PM", "")}
+                                    <div
+                                      className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block px-2 py-1 bg-black text-white text-xs rounded"
+                                      style={{ whiteSpace: "nowrap" }}
+                                    >
+                                      {new Date(
+                                        transaction.timestamp,
+                                      ).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        second: "2-digit",
+                                      })}
+                                    </div> */}
+                          </div>
+
+                          <div className="text-sm text-zinc-700">
+                            {transaction.amount.toLocaleString("en-US", {
+                              style: "currency",
+                              currency: "USD",
+                            })}
+                          </div>
+
+                          {/* option: have the transactions negative or positive and if it's negative display in red 
+                                  if it's positive display in green. 
+                                  pros: clarity
+                                  cons: more colors on the screen whereas the gray was clean
+                                  
+                                  note: make sure to change the min for transaction amount to a negative number to test 
+                                  */}
+                          {/* <div
+                                    className={`text-sm font-mono ${
+                                      transaction.amount < 0
+                                        ? "text-red-500"
+                                        : "text-green-500"
+                                    }`}
+                                  >
+                                    {transaction.amount.toLocaleString(
+                                      "en-US",
+                                      {
+                                        style: "currency",
+                                        currency: "USD",
+                                      },
+                                    )}
+                                  </div> */}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

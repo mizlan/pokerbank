@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store";
 import { useEffect } from "react";
-import { useNavigate, Link } from "react-router";
+import { useNavigate } from "react-router";
 
 export default function Login() {
   const isSignedIn = useAuthStore((state) => state.isSignedIn);

@@ -2,33 +2,27 @@ open Containers
 module C = Oidc.SimpleClient
 module Db = Database
 module M = Middleware
-module E = Error
+module R = Response
 open Lwt.Syntax
 
 let dream_render v =
   let* p = v in
   Result.catch ~ok:Fun.id ~err:Fun.id p
 
-let dream_generic_err e =
-  Dream.json ~status:`Bad_Request (Printf.sprintf {|{"error": "%s"}|} e)
-
-let dream_render_err r = Lwt_result.map_error dream_generic_err r
-let dream_render_internal_err r = Lwt_result.map_error E.internal r
+let dream_render_err r = Lwt_result.map_error R.bad_req r
+let dream_render_internal_err r = Lwt_result.map_error R.internal r
 let dream_sql_or_err req f = Dream.sql req f |> dream_render_err
 
 let dream_query_string req key =
   match Dream.query req key with
   | None ->
-      Lwt.return_error
-        (dream_generic_err ("missing string query parameter " ^ key))
+      Lwt.return_error (R.bad_req ("missing string query parameter " ^ key))
   | Some x -> Lwt.return_ok x
 
 let dream_query_int req key =
   let open Option.Infix in
   match Dream.query req key >>= Int.of_string with
-  | None ->
-      Lwt.return_error
-        (dream_generic_err ("missing int query parameter " ^ key))
+  | None -> Lwt.return_error (R.bad_req ("missing int query parameter " ^ key))
   | Some x -> Lwt.return_ok x
 
 let bank_routes =
@@ -40,7 +34,7 @@ let bank_routes =
         let* session_id = dream_query_int req "session_id" in
         let* player_id = dream_query_int req "player_id" in
         let+ () = dream_sql_or_err req (Db.set_bank ~session_id ~player_id) in
-        Dream.json {|{"message": "success"}|});
+        R.success "set bank");
     Dream.post "/api/transact" (fun req ->
         dream_render
         @@
@@ -51,13 +45,13 @@ let bank_routes =
         let+ () =
           dream_sql_or_err req (Db.transact ~session_id ~player_id ~amount)
         in
-        Dream.json {|{"message": "success"}|});
+        R.success "transacted");
   ]
 
 let player_routes =
   [
     Dream.scope "/" [ M.auth_bank_middleware ] bank_routes;
-    Dream.get "/api/ping" (fun _ -> Dream.json {|{"message": "pong"}|});
+    Dream.get "/api/ping" (fun _ -> R.success "pong");
     Dream.get "/api/session_info" (fun req ->
         dream_render
         @@
@@ -75,7 +69,7 @@ let player_routes =
         let open Lwt_result.Syntax in
         let* name = dream_query_string req "name" in
         let+ i = dream_sql_or_err req (Db.create_session ~name ~player_id) in
-        Dream.json (Printf.sprintf {|{"session_id": "%d"}|} i));
+        R.success (Printf.sprintf "created session %d" i));
   ]
 
 let routes =
@@ -99,9 +93,9 @@ let routes =
           let* reported_state = dream_query_string req "state" in
           let recorded_state = Dream.cookie req "google_oauth_state" in
           match recorded_state with
-          | None -> Lwt.return_error (E.unauthorized "oauth: missing state")
+          | None -> Lwt.return_error (R.unauthorized "oauth: missing state")
           | Some state when String.(state <> reported_state) ->
-              Lwt.return_error (E.unauthorized "oauth: state mismatch")
+              Lwt.return_error (R.unauthorized "oauth: state mismatch")
           | _ ->
               let* tok = Auth.get_token code |> dream_render_internal_err in
               let* { email; name } =
@@ -127,7 +121,7 @@ let routes =
         Lwt.return resp);
     Dream.get "/api/logout" (fun req ->
         let* () = Dream.invalidate_session req in
-        Dream.json {|{"message": "logged out"}|});
+        R.success "logged out");
   ]
 
 let arg_private_admin = ref false
@@ -138,7 +132,7 @@ let private_admin_routes =
         let* player_id = dream_query_string req "id" in
         let player_id = Result.get_or player_id ~default:"1" in
         let* () = Dream.set_session_field req "player_id" player_id in
-        Dream.json {|{"message": "autoauthenticated"}|});
+        R.success "autoauthenticated");
   ]
 
 let () =
